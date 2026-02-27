@@ -6,14 +6,14 @@ class FavoritesController < ApplicationController
   end
 
   def create
-    recipe = Recipe.find(params[:recipe_id])
+    recipe = Recipe.find(params[:id])
     current_user.favorites.find_or_create_by(recipe: recipe)
-    redirect_back(fallback_location: root_path, notice: 'Recipe saved to favorites.')
+    redirect_to request.referer || root_path, notice: 'Recipe saved to favorites.'
   end
 
   def destroy
-    favorite = current_user.favorites.find_by(recipe_id: params[:recipe_id])
+    favorite = current_user.favorites.find_by(recipe_id: params[:id])
     favorite&.destroy
-    redirect_back(fallback_location: root_path, notice: 'Recipe removed from favorites.')
+    redirect_to request.referer || root_path, notice: 'Recipe removed from favorites.'
   end
 end

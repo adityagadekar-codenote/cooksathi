@@ -1,6 +1,9 @@
 Rails.application.routes.draw do
   root "home#index"
 
+  # About page
+  get "about", to: "pages#about"
+
   # Search
   post "search", to: "recipes#search"
 

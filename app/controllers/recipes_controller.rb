@@ -1,6 +1,8 @@
 class RecipesController < ApplicationController
+  require 'set'
+
   before_action :set_recipe, only: %i[show edit update destroy]
-  before_action :require_authentication, except: %i[search show]
+  before_action :require_authentication, except: %i[search show index]
   before_action :require_ownership, only: %i[edit update destroy]
 
   def search
@@ -40,9 +42,21 @@ class RecipesController < ApplicationController
         recipe.matched_count = (recipe_ingredient_names & matched_ingredient_names).size
         recipe.total_count = recipe.ingredients.count
         recipe.match_percentage = (recipe.matched_count.to_f / recipe.total_count * 100).round
-        recipe.missing_count = recipe.total_count - recipe.matched_count
+        
+        # Calculate missing ingredients (what user searched for but recipe doesn't have)
+        user_ing_set = user_ingredients.to_set
+        recipe_ing_set = recipe_ingredient_names.to_set
+        missing = user_ing_set - recipe_ing_set
+        recipe.missing_ingredients = Ingredient.where("LOWER(name) IN (?)", missing.to_a).to_a
+        recipe.missing_count = missing.size
 
-        recipe.match_percentage >= 20
+        # If only one ingredient entered, show all recipes containing it
+        # If multiple ingredients, show recipes with at least one match (more flexible)
+        if user_ingredients.count == 1
+          recipe.matched_count >= 1
+        else
+          recipe.matched_count >= 1  # At least one matching ingredient
+        end
       end
 
       # Sort by match_percentage DESC, missing_count ASC, prep_time ASC
@@ -142,7 +156,11 @@ class RecipesController < ApplicationController
     ingredient_names = parse_ingredients(ingredients_list)
 
     ingredient_names.each do |name|
-      ingredient = Ingredient.find_or_create_by(name: name)
+      # Find existing ingredient (case-insensitive) or create new one
+      ingredient = Ingredient.find_by("LOWER(name) = ?", name)
+      unless ingredient
+        ingredient = Ingredient.create!(name: name)
+      end
       recipe.ingredients << ingredient unless recipe.ingredients.include?(ingredient)
     end
   end

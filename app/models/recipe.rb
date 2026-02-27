@@ -11,7 +11,7 @@ class Recipe < ApplicationRecord
   validates :visibility, presence: true, inclusion: { in: %w[public private] }
 
   # Virtual attributes for search
-  attr_accessor :matched_count, :total_count, :match_percentage, :missing_count
+  attr_accessor :matched_count, :total_count, :match_percentage, :missing_count, :missing_ingredients
 
   scope :public_only, -> { where(visibility: 'public') }
   scope :visible_to, ->(user) do

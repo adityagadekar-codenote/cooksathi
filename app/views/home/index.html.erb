@@ -19,36 +19,37 @@
       <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-8">
         <%= form_with url: search_path, method: :post, local: true, class: "space-y-6" do |form| %>
           <div class="relative">
-            <div class="flex">
+            <div class="flex items-stretch">
               <div class="relative flex-1">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                   </svg>
                 </div>
                 <%= text_field_tag :ingredients, "",
                     placeholder: "Tomato, Onion, Garlic...",
-                    class: "w-full pl-12 pr-4 py-4 rounded-l-lg border-0 focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder-gray-500",
+                    autocomplete: "off",
+                    class: "w-full pl-12 pr-4 py-4 rounded-l-lg border-0 focus:ring-2 focus:ring-orange-500 text-white placeholder-gray-400 bg-white/20 backdrop-blur",
                     required: true %>
               </div>
-              <%= submit_tag "Search", class: "btn-primary rounded-l-none py-4 px-8 cursor-pointer" %>
+              <%= submit_tag "Search", class: "btn-primary rounded-r-lg rounded-l-none py-4 px-8 cursor-pointer hover:bg-orange-600 transition" %>
             </div>
           </div>
           
           <div class="flex flex-wrap gap-3 items-center">
-            <div class="relative">
+            <div>
               <%= select_tag :diet_type,
-                  options_for_select([["Any Diet", ""], ["Veg", "veg"], ["Vegan", "vegan"], ["Non-Veg", "non-veg"]]),
-                  class: "px-4 py-2 bg-white/20 backdrop-blur text-white border border-white/30 rounded-full focus:ring-2 focus:ring-orange-500 cursor-pointer" %>
+                  options_for_select([["  Any Diet  ", ""], ["  Veg  ", "veg"], ["  Vegan  ", "vegan"], ["  Non-Veg  ", "non-veg"]]),
+                  class: "px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold border-0 rounded-full focus:ring-2 focus:ring-orange-300 focus:ring-offset-2 focus:ring-offset-gray-900 cursor-pointer shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200" %>
             </div>
-            
+
             <div class="flex-1 min-w-[200px]">
-              <label class="text-white text-sm mb-2 block">Max Prep Time</label>
+              <label class="text-white text-sm mb-2 block font-medium">Max Prep Time</label>
               <div class="flex items-center space-x-3">
-                <%= range_field_tag :max_time, 45, 
+                <%= range_field_tag :max_time, 45,
                     min: 5, max: 120, step: 5,
-                    class: "flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-orange-500" %>
-                <span class="text-white text-sm font-medium bg-white/20 px-3 py-1 rounded-full" id="timeValue">45 mins</span>
+                    class: "flex-1 h-2 bg-white/30 rounded-lg appearance-none cursor-pointer accent-orange-500" %>
+                <span class="text-white text-sm font-semibold bg-orange-500/90 px-4 py-1.5 rounded-full shadow-md" id="timeValue">45 mins</span>
               </div>
             </div>
           </div>
@@ -90,12 +91,31 @@
   // Update time slider value
   const timeSlider = document.querySelector('input[name="max_time"]');
   const timeValue = document.getElementById('timeValue');
-  
+
   if (timeSlider && timeValue) {
     timeValue.textContent = timeSlider.value + ' mins';
-    
+
     timeSlider.addEventListener('input', function() {
       timeValue.textContent = this.value + ' mins';
     });
   }
 </script>
+
+<style>
+  /* Style the diet type dropdown options */
+  select[name="diet_type"] option {
+    background-color: #1f2937;
+    color: white;
+    padding: 10px;
+    font-weight: 500;
+  }
+  
+  select[name="diet_type"] option:hover {
+    background-color: #f97316;
+  }
+  
+  select[name="diet_type"] option:checked {
+    background-color: #f97316;
+    color: white;
+  }
+</style>
