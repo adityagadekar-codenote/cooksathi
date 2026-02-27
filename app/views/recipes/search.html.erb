@@ -1,0 +1,79 @@
+<div class="max-w-6xl mx-auto">
+  <div class="mb-6">
+    <%= link_to "← Back to Search", root_path, class: "text-green-600 hover:underline" %>
+  </div>
+
+  <h2 class="text-3xl font-bold text-gray-800 mb-6">Search Results</h2>
+
+  <% if @errors.any? %>
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+      <ul class="list-disc list-inside">
+        <% @errors.each do |error| %>
+          <li><%= error %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if @recipes.any? %>
+    <p class="text-gray-600 mb-6"><%= @recipes.count %> recipe(s) found</p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <% @recipes.each do |recipe| %>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="text-xl font-semibold text-gray-800">
+                <%= link_to recipe.name, recipe_path(recipe), class: "hover:text-green-600" %>
+              </h3>
+              <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs capitalize"><%= recipe.diet_type %></span>
+            </div>
+            
+            <% if recipe.description.present? %>
+              <p class="text-gray-600 text-sm mb-4"><%= recipe.description %></p>
+            <% end %>
+
+            <div class="mb-4">
+              <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
+                <span>Match: <span class="font-semibold text-green-600"><%= recipe.match_percentage %>%</span></span>
+                <span><%= recipe.prep_time %> min</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-green-600 h-2 rounded-full" style="width: <%= recipe.match_percentage %>%"></div>
+              </div>
+            </div>
+
+            <% if recipe.missing_count > 0 %>
+              <p class="text-sm text-orange-600 mb-4">
+                Missing: <%= recipe.ingredients.where("LOWER(name) NOT IN (?)", Ingredient.where("LOWER(name) IN (?)", parse_ingredients_for_view(@ingredients_input)).pluck("LOWER(name)")).pluck(:name).join(", ") %>
+              </p>
+            <% end %>
+
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-400"><%= recipe.ingredients.count %> ingredients</span>
+              <% if logged_in? %>
+                <% if current_user.favorites.exists?(recipe: recipe) %>
+                  <%= button_to "Remove", unfavorite_path(recipe), method: :delete, class: "text-red-600 hover:text-red-800 text-sm" %>
+                <% else %>
+                  <%= button_to "Save", favorite_path(recipe), method: :post, class: "text-green-600 hover:text-green-800 text-sm" %>
+                <% end %>
+              <% else %>
+                <%= link_to "Login to Save", login_path, class: "text-green-600 hover:text-green-800 text-sm" %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% elsif @errors.empty? %>
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+      <p class="text-gray-600 mb-4">No recipes found matching your criteria.</p>
+      <%= link_to "Try Another Search", root_path, class: "inline-block bg-green-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-green-700" %>
+    </div>
+  <% end %>
+</div>
+
+<%# Helper method for view %>
+<% def parse_ingredients_for_view(input)
+  input.downcase.split(",").map { |i| i.strip }.reject { |i| i.blank? }.uniq
+end %>

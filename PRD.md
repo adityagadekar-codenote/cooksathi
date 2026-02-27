@@ -1,6 +1,3 @@
-Here is your **PRD.md** file content. You can copy this directly into `PRD.md` and feed it to your CLI agent.
-
----
 
 # Cooksathi – Product Requirements Document (PRD)
 
@@ -18,123 +15,268 @@ Your kitchen companion.
 
 Build a web application using:
 
-* Ruby on Rails- Version 8.1
-* Ruby- 4.0
+* Ruby on Rails
 * PostgreSQL
 * Tailwind CSS
 
-The app allows users to:
+The application allows users to:
 
-1. Enter ingredients they currently have
-2. Select diet type (Veg or Vegan)
-3. Enter available cooking time (in minutes)
-4. Receive ranked recipe suggestions based on match percentage
+1. Search recipes using ingredients, diet type, and available time (no login required)
+2. Sign up and log in
+3. Save favorite recipes
+4. Create their own recipes
+5. Mark recipes as public or private
+6. Dynamically add new ingredients when creating recipes
+7. Browse public recipes created by all users
 
-This is an MVP that must be simple, clean, and fully functional.
+This is an MVP and must be clean, functional, and production-structured.
 
 ---
 
-# 2. MVP Scope
+# 2. User Roles
+
+## 2.1 Anonymous User
+
+Can:
+
+* Search recipes
+* View public recipe details
+* See public user-created recipes
+
+Cannot:
+
+* Save favorites
+* Create recipes
+* Edit/delete recipes
+* View private recipes
+
+---
+
+## 2.2 Registered User
+
+Can:
+
+* Search recipes
+* View all public recipes
+* View own private recipes
+* Save favorite recipes
+* Create new recipes
+* Edit/delete their own recipes
+* Mark recipes as public or private
+* Add new ingredients during recipe creation
+
+Cannot:
+
+* Edit/delete others' recipes
+* View others’ private recipes
+
+---
+
+# 3. MVP Scope
 
 ## Included
 
-* Ingredient-based recipe search
+* Ingredient-based search
 * Diet filter (Veg / Vegan)
 * Maximum prep time filter
-* Ranked results by match percentage
-* Recipe detail page
-* Seeded sample recipes
-* Responsive UI with Tailwind CSS
+* Ranked results by match %
+* Authentication (Signup/Login/Logout)
+* Favorites system
+* Recipe CRUD for authenticated users
+* Public/Private visibility
+* Dynamic ingredient creation
+* Seeded recipes
+* Responsive UI
 
 ## Not Included
 
-* Authentication
-* Favorites
+* Password reset
+* Social login
+* Comments
+* Ratings
 * Admin dashboard
 * Image uploads
-* AI integrations
+* AI suggestions
 * Nutrition data
-* Grocery list generation
 
 ---
 
-# 3. Core User Flow
-
-## 3.1 Homepage
-
-User sees:
-
-* Text input for ingredients (comma separated)
-* Dropdown for diet type (Veg / Vegan)
-* Numeric input for maximum time (minutes)
-* Submit button
-
-On submit → POST to `/search`
+# 4. Core User Flows
 
 ---
 
-## 3.2 Results Page
+## 4.1 Anonymous Search Flow
 
-Display list of recipes sorted by:
+1. Visit homepage
+2. Enter:
 
-1. Highest match percentage
-2. Lowest missing ingredient count
-3. Lowest prep time
+   * Ingredients (comma separated)
+   * Diet type
+   * Maximum time
+3. Submit search
+4. View ranked results
+5. View recipe details (public only)
 
-Each result card shows:
+If clicking "Save to Favorites":
 
-* Recipe name
-* Prep time
-* Match percentage
-* Missing ingredient count
-* Button to view recipe
-
-If no recipes match → show friendly empty state message.
+* Redirect to login page
 
 ---
 
-## 3.3 Recipe Detail Page
+## 4.2 Signup / Login Flow
 
-Display:
+User can:
 
-* Recipe name
-* Prep time
-* Diet type
-* Full ingredient list
-* Missing ingredients (highlighted)
-* Step-by-step instructions
+* Sign up with:
 
----
+  * Name
+  * Email (unique)
+  * Password
+* Login
+* Logout
 
-# 4. Functional Requirements
+After login:
 
-## 4.1 Ingredient Input Processing
+* Redirect to homepage
 
-* Input format: comma separated string
-* Normalize:
-
-  * Convert to lowercase
-  * Strip whitespace
-  * Remove duplicates
-* Convert into array of ingredient names
+Passwords must be securely hashed.
 
 ---
 
-## 4.2 Recipe Filtering Logic
+## 4.3 Favorites Flow
 
-### Step 1: Base Filtering
+Authenticated user can:
+
+* Click "Save to Favorites"
+* Remove from favorites
+* View favorites page
+
+Rules:
+
+* Cannot favorite same recipe twice
+* Unique constraint on (user_id, recipe_id)
+
+---
+
+## 4.4 Recipe Creation Flow
+
+Authenticated user can:
+
+1. Click "Create Recipe"
+2. Fill form:
+
+   * Name
+   * Description
+   * Prep time
+   * Diet type (veg/vegan)
+   * Ingredients (comma separated input)
+   * Instructions
+   * Visibility (public/private)
+3. Submit
+
+System must:
+
+* Normalize ingredient names
+* Find existing ingredients OR create new ones
+* Associate ingredients with recipe
+* Save recipe with user_id
+
+---
+
+# 5. Ingredient Management
+
+## 5.1 Ingredient Rules
+
+Anonymous users:
+
+* Cannot create ingredients
+* Can search using existing ones
+
+Registered users:
+
+* Can introduce new ingredients during recipe creation/edit
+
+New ingredients must:
+
+* Be saved globally
+* Be visible to all users
+* Be usable in search immediately
+
+---
+
+## 5.2 Ingredient Normalization
+
+When processing ingredient input:
+
+1. Split by comma
+2. Trim whitespace
+3. Convert to lowercase
+4. Remove duplicates
+5. Reject blank values
+
+---
+
+## 5.3 Ingredient Uniqueness
+
+Database must enforce:
+
+* Case-insensitive uniqueness
+
+Example:
+
+"Tomato" and "tomato" must not both exist.
+
+Add unique index on LOWER(name).
+
+---
+
+# 6. Recipe Visibility Rules
+
+Each recipe must have:
+
+* visibility (enum or string: "public", "private")
+* user_id (nullable for seeded system recipes)
+
+Visibility rules:
+
+Public recipes:
+
+* Visible to everyone
+
+Private recipes:
+
+* Visible only to owner
+
+Search results must include:
+
+* All public recipes
+* Current user's private recipes (if logged in)
+
+Search must exclude:
+
+* Other users’ private recipes
+
+---
+
+# 7. Recipe Matching Logic
+
+## Step 1: Base Filtering
 
 Filter recipes where:
 
-* `diet_type == selected_diet`
-* `prep_time <= user_time`
+* diet_type matches selected diet
+* prep_time <= user_time
+* visibility rule is satisfied
 
-### Step 2: Matching Score
+---
 
-For each filtered recipe:
+## Step 2: Match Score Calculation
 
-* matched_ingredients = intersection of recipe ingredients and user ingredients
-* total_recipe_ingredients = total ingredients in recipe
+For each candidate recipe:
+
+matched_ingredients = intersection of recipe.ingredients and user.ingredients
+
+total_recipe_ingredients = recipe.ingredients.count
 
 match_percentage =
 (matched_ingredients / total_recipe_ingredients) * 100
@@ -143,16 +285,18 @@ Only include recipes where:
 
 * match_percentage >= 40
 
-### Step 3: Missing Ingredients
+---
+
+## Step 3: Missing Ingredients
 
 missing_ingredients =
-recipe ingredients - user ingredients
+recipe.ingredients - user.ingredients
 
 ---
 
-## 4.3 Sorting Logic
+## Step 4: Sorting
 
-Sort by:
+Sort results by:
 
 1. match_percentage DESC
 2. missing_ingredients count ASC
@@ -160,16 +304,31 @@ Sort by:
 
 ---
 
-# 5. Database Schema
+# 8. Database Schema
+
+---
+
+## users
+
+* id
+* name (required)
+* email (required, unique)
+* password_digest (required)
+* created_at
+* updated_at
+
+---
 
 ## recipes
 
-* id (integer, primary key)
-* name (string, required)
-* description (text)
-* prep_time (integer, required)
-* diet_type (string, required: "veg" or "vegan")
-* instructions (text, required)
+* id
+* name (required)
+* description
+* prep_time (required)
+* diet_type (required: veg/vegan)
+* instructions (required)
+* visibility (required: public/private)
+* user_id (nullable for seeded recipes)
 * created_at
 * updated_at
 
@@ -177,203 +336,186 @@ Sort by:
 
 ## ingredients
 
-* id (integer, primary key)
-* name (string, required, unique)
+* id
+* name (required)
 * created_at
 * updated_at
 
-Add unique index on `name`.
+Constraints:
+
+* Unique index on lower(name)
 
 ---
 
 ## recipe_ingredients
 
-* id (integer, primary key)
-* recipe_id (integer, foreign key)
-* ingredient_id (integer, foreign key)
+* id
+* recipe_id
+* ingredient_id
 * created_at
 * updated_at
 
-Add indexes on:
+Indexes:
 
 * recipe_id
 * ingredient_id
 
 ---
 
-# 6. Associations
+## favorites
+
+* id
+* user_id
+* recipe_id
+* created_at
+
+Constraints:
+
+* Unique index on (user_id, recipe_id)
+
+---
+
+# 9. Associations
+
+User:
+
+* has_many :recipes
+* has_many :favorites
+* has_many :favorite_recipes, through: :favorites, source: :recipe
 
 Recipe:
 
+* belongs_to :user (optional)
 * has_many :recipe_ingredients
 * has_many :ingredients, through: :recipe_ingredients
+* has_many :favorites
 
 Ingredient:
 
 * has_many :recipe_ingredients
 * has_many :recipes, through: :recipe_ingredients
 
-RecipeIngredient:
+Favorite:
 
+* belongs_to :user
 * belongs_to :recipe
-* belongs_to :ingredient
 
 ---
 
-# 7. Routes
+# 10. Routes
 
-* GET `/` → home#index
-* POST `/search` → recipes#search
-* GET `/recipes/:id` → recipes#show
+Public:
 
-No other routes required.
+* GET `/`
+* POST `/search`
+* GET `/recipes/:id`
+* GET `/signup`
+* POST `/users`
+* GET `/login`
+* POST `/login`
+* DELETE `/logout`
 
----
+Authenticated:
 
-# 8. Controllers
-
-## HomeController
-
-* index
-
-## RecipesController
-
-### search
-
-Responsibilities:
-
-* Parse and normalize user ingredients
-* Filter recipes by diet and prep_time
-* Calculate match percentage
-* Calculate missing ingredients
-* Sort results
-* Return ranked list to view
-
-### show
-
-* Display full recipe details
+* GET `/favorites`
+* POST `/recipes/:id/favorite`
+* DELETE `/recipes/:id/unfavorite`
+* GET `/recipes/new`
+* POST `/recipes`
+* GET `/recipes/:id/edit`
+* PATCH `/recipes/:id`
+* DELETE `/recipes/:id`
 
 ---
 
-# 9. Seed Data Requirements
+# 11. Authorization Rules
 
-Seed at least 10 recipes.
+Require authentication for:
 
-Each recipe must:
+* Creating recipe
+* Editing recipe
+* Deleting recipe
+* Favoriting recipe
+* Viewing favorites page
 
-* Have 4–8 ingredients
-* Have overlapping ingredients with other recipes
-* Include a mix of Veg and Vegan recipes
-* Have realistic prep times (10–45 minutes)
-* Include complete instructions
+Enforce:
 
-Ensure good ingredient reuse so matching works meaningfully.
+* Only owner can edit/delete recipe
+* Only owner can view private recipe
+* Anonymous users cannot access private recipes
 
----
+Return:
 
-# 10. UI Requirements (Tailwind CSS)
-
-## General
-
-* Clean, minimal layout
-* Centered container
-* Responsive design
-* Green primary button theme
-
----
-
-## Homepage UI
-
-* Large title: Cooksathi
-* Ingredients input (full width)
-* Diet dropdown
-* Time input
-* Submit button
-* Basic validation message for empty ingredients
-
----
-
-## Results Page
-
-* Grid or vertical card layout
-* Each card:
-
-  * Recipe name (bold)
-  * Prep time
-  * Match %
-  * Missing count
-  * View button
-
----
-
-## Recipe Detail Page
-
-Sections:
-
-* Header with name
-* Meta info (prep time, diet)
-* Ingredient list
-* Missing ingredients in red
-* Instructions in numbered list
-
----
-
-# 11. Edge Cases
-
-* Empty ingredient input → validation error
-* Non-numeric time → validation error
-* No matching recipes → friendly message
-* Duplicate ingredients → remove before processing
-* Case-insensitive matching
+* Redirect to login OR 403 for unauthorized access
 
 ---
 
 # 12. Non-Functional Requirements
 
-* No N+1 queries (use includes)
-* Fast response time locally
-* Clean and readable code
-* Proper model validations
-* No runtime errors on bad input
+* No N+1 queries
+* Model validations present
+* DB-level constraints enforced
+* Secure password hashing
+* Clean Tailwind UI
+* Responsive design
+* Graceful error handling
 
 ---
 
-# 13. Acceptance Criteria
+# 13. Edge Cases
 
-The feature is considered complete when:
-
-* User can search using ingredients, diet, and time
-* Recipes are ranked correctly
-* Match percentage is accurate
-* Missing ingredients are displayed
-* Detail page works correctly
-* Seeds load successfully
-* UI is responsive
-* No crashes on invalid input
+* Duplicate ingredients in input → deduplicate
+* Ingredient case variations → normalized
+* Simultaneous creation of same ingredient → unique index handles
+* Anonymous trying to favorite → redirect to login
+* Accessing others' private recipe → blocked
+* Empty search input → validation error
 
 ---
 
-# 14. Definition of Done
+# 14. Acceptance Criteria
 
-* Database schema implemented
-* Associations working
-* Search logic implemented
-* Seeds populated
-* UI complete
-* Manual testing performed
+Anonymous user:
+
+* Can search recipes
+* Can view public recipes
+* Cannot access private recipes
+* Cannot favorite recipes
+
+Registered user:
+
+* Can signup/login/logout
+* Can create recipe
+* Can mark public/private
+* Can dynamically add new ingredients
+* Can favorite/unfavorite recipes
+* Can view favorites page
+* Can edit/delete own recipes
+* Cannot edit/delete others’ recipes
+
+System:
+
+* Ingredients created dynamically are globally visible
+* No duplicate ingredient records
+* Visibility rules strictly enforced
+* Search respects visibility
+* Ranking logic works correctly
+* Database constraints prevent invalid states
 * Application runs without errors
 
 ---
 
-# 15. Future Enhancements (Out of Scope)
+# 15. Definition of Done
 
-* Authentication
-* Save favorites
-* Grocery list generator
-* AI-powered suggestions
-* Nutrition API integration
-* Admin dashboard
-* Image uploads
-* Public deployment
+* Authentication implemented
+* Favorites implemented
+* Recipe CRUD implemented
+* Public/private visibility enforced
+* Dynamic ingredient creation implemented
+* Case-insensitive ingredient uniqueness enforced
+* Search ranking logic implemented
+* Seed data added
+* Manual testing complete
+* App runs cleanly without runtime errors
 
 ---

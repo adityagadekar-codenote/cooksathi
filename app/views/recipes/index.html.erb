@@ -1,0 +1,50 @@
+<div class="max-w-6xl mx-auto">
+  <h2 class="text-3xl font-bold text-gray-800 mb-6">Browse All Recipes</h2>
+
+  <% if @recipes.any? %>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <% @recipes.each do |recipe| %>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+          <div class="p-6">
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="text-xl font-semibold text-gray-800">
+                <%= link_to recipe.name, recipe_path(recipe), class: "hover:text-green-600" %>
+              </h3>
+              <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs capitalize"><%= recipe.diet_type %></span>
+            </div>
+            
+            <% if recipe.description.present? %>
+              <p class="text-gray-600 text-sm mb-4"><%= recipe.description %></p>
+            <% end %>
+
+            <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+              <span><%= recipe.prep_time %> min</span>
+              <span><%= recipe.ingredients.count %> ingredients</span>
+              <span class="capitalize"><%= recipe.visibility %></span>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-gray-400">By <%= recipe.user&.name || "Cooksathi" %></span>
+              <% if logged_in? %>
+                <% if current_user.favorites.exists?(recipe: recipe) %>
+                  <%= button_to "Remove", unfavorite_path(recipe), method: :delete, class: "text-red-600 hover:text-red-800 text-sm" %>
+                <% else %>
+                  <%= button_to "Save", favorite_path(recipe), method: :post, class: "text-green-600 hover:text-green-800 text-sm" %>
+                <% end %>
+              <% else %>
+                <%= link_to "Login to Save", login_path, class: "text-green-600 hover:text-green-800 text-sm" %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+      <p class="text-gray-600 mb-4">No recipes available yet.</p>
+      <% if logged_in? %>
+        <%= link_to "Create First Recipe", new_recipe_path, class: "inline-block bg-green-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-green-700" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
