@@ -1,79 +1,105 @@
-<div class="max-w-2xl mx-auto">
-  <h2 class="text-3xl font-bold text-gray-800 mb-6">Edit Recipe</h2>
-
-  <div class="bg-white rounded-lg shadow-md p-8">
-    <%= form_with model: @recipe, local: true, class: "space-y-6" do |form| %>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Edit Recipe</h1>
+    <p class="text-gray-600">Update your culinary creation.</p>
+  </div>
+  
+  <div class="bg-white rounded-2xl shadow-sm p-8">
+    <%= form_with model: @recipe, local: true, class: "space-y-8" do |form| %>
       <% if @recipe.errors.any? %>
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <h3 class="font-semibold mb-2"><%= pluralize(@recipe.errors.count, "error") %> prevented saving:</h3>
-          <ul class="list-disc list-inside">
+        <div class="bg-red-50 border-l-4 border-red-500 py-4 px-6 rounded-lg">
+          <h3 class="font-semibold text-red-800 mb-2"><%= pluralize(@recipe.errors.count, "error") %> prevented saving:</h3>
+          <ul class="list-disc list-inside text-red-700 text-sm">
             <% @recipe.errors.full_messages.each do |message| %>
               <li><%= message %></li>
             <% end %>
           </ul>
         </div>
       <% end %>
-
+      
       <div>
-        <%= form.label :name, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.label :name, "Recipe Name", class: "block text-sm font-semibold text-gray-900 mb-2" %>
         <%= form.text_field :name,
-            class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent",
+            class: "w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-orange-50",
             required: true %>
       </div>
-
+      
       <div>
-        <%= form.label :description, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.label :description, "Description", class: "block text-sm font-semibold text-gray-900 mb-2" %>
         <%= form.text_area :description,
             rows: 3,
-            class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" %>
+            class: "w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-orange-50" %>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <%= form.label :prep_time, "Prep Time (minutes)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= form.label :prep_time, "Prep Time (minutes)", class: "block text-sm font-semibold text-gray-900 mb-2" %>
           <%= form.number_field :prep_time,
               min: 1,
-              class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent",
+              class: "w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-orange-50",
               required: true %>
         </div>
-
+        
         <div>
-          <%= form.label :diet_type, class: "block text-sm font-medium text-gray-700 mb-1" %>
-          <%= form.select :diet_type,
-              options_for_select([["Veg", "veg"], ["Vegan", "vegan"]], @recipe.diet_type),
-              {},
-              class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" %>
+          <%= form.label :diet_type, "Diet Type", class: "block text-sm font-semibold text-gray-900 mb-2" %>
+          <div class="flex gap-3">
+            <label class="flex-1 cursor-pointer">
+              <%= form.radio_button :diet_type, "veg", class: "peer sr-only" %>
+              <div class="px-4 py-3 border-2 border-gray-200 rounded-lg text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 transition">
+                <span class="font-medium text-gray-700 peer-checked:text-orange-600">Veg</span>
+              </div>
+            </label>
+            <label class="flex-1 cursor-pointer">
+              <%= form.radio_button :diet_type, "vegan", class: "peer sr-only" %>
+              <div class="px-4 py-3 border-2 border-gray-200 rounded-lg text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 transition">
+                <span class="font-medium text-gray-700 peer-checked:text-orange-600">Vegan</span>
+              </div>
+            </label>
+            <label class="flex-1 cursor-pointer">
+              <%= form.radio_button :diet_type, "non-veg", class: "peer sr-only" %>
+              <div class="px-4 py-3 border-2 border-gray-200 rounded-lg text-center peer-checked:border-orange-500 peer-checked:bg-orange-50 transition">
+                <span class="font-medium text-gray-700 peer-checked:text-orange-600">Non-Veg</span>
+              </div>
+            </label>
+          </div>
         </div>
       </div>
-
+      
       <div>
-        <%= form.label :visibility, class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= form.select :visibility,
-            options_for_select([["Public", "public"], ["Private", "private"]], @recipe.visibility),
-            {},
-            class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" %>
-      </div>
-
-      <div>
-        <%= label_tag :ingredients_list, "Ingredients", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= label_tag :ingredients_list, "Ingredients", class: "block text-sm font-semibold text-gray-900 mb-2" %>
         <%= text_field_tag :ingredients_list, @recipe.ingredients.pluck(:name).join(", "),
-            placeholder: "e.g., tomato, onion, garlic, salt",
-            class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent",
+            class: "w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-orange-50",
             required: true %>
-        <p class="mt-1 text-sm text-gray-500">Separate ingredients with commas.</p>
       </div>
-
+      
       <div>
-        <%= form.label :instructions, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.label :instructions, "Cooking Instructions", class: "block text-sm font-semibold text-gray-900 mb-2" %>
         <%= form.text_area :instructions,
-            rows: 6,
-            class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent",
+            rows: 8,
+            class: "w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-orange-50 font-mono text-sm",
             required: true %>
       </div>
-
-      <div class="flex gap-4">
-        <%= form.submit "Update Recipe", class: "flex-1 bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition duration-200 cursor-pointer" %>
-        <%= link_to "Cancel", @recipe, class: "flex-1 inline-block text-center bg-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-400 transition duration-200" %>
+      
+      <div class="flex items-center justify-between py-6 border-t border-gray-100">
+        <div>
+          <%= form.label :visibility, "Visibility", class: "block text-sm font-semibold text-gray-900" %>
+          <p class="text-sm text-gray-500">Choose who can see this recipe</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <div class="flex items-center">
+            <%= form.radio_button :visibility, "private", class: "text-orange-500 focus:ring-orange-500" %>
+            <%= form.label :visibility_private, "Private", class: "ml-2 text-sm text-gray-700 cursor-pointer" %>
+          </div>
+          <div class="flex items-center">
+            <%= form.radio_button :visibility, "public", class: "text-orange-500 focus:ring-orange-500" %>
+            <%= form.label :visibility_public, "Public", class: "ml-2 text-sm text-gray-700 cursor-pointer" %>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex gap-4 pt-6 border-t border-gray-100">
+        <%= form.submit "Update Recipe", class: "btn-primary flex-1 py-3 cursor-pointer" %>
+        <%= link_to "Cancel", @recipe, class: "btn-secondary flex-1 text-center py-3" %>
       </div>
     <% end %>
   </div>

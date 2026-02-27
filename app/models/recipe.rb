@@ -6,7 +6,7 @@ class Recipe < ApplicationRecord
 
   validates :name, presence: true, length: { maximum: 255 }
   validates :prep_time, presence: true, numericality: { greater_than: 0 }
-  validates :diet_type, presence: true, inclusion: { in: %w[veg vegan] }
+  validates :diet_type, presence: true, inclusion: { in: %w[veg vegan non-veg] }
   validates :instructions, presence: true
   validates :visibility, presence: true, inclusion: { in: %w[public private] }
 

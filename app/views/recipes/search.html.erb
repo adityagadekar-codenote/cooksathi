@@ -1,79 +1,229 @@
-<div class="max-w-6xl mx-auto">
-  <div class="mb-6">
-    <%= link_to "← Back to Search", root_path, class: "text-green-600 hover:underline" %>
-  </div>
-
-  <h2 class="text-3xl font-bold text-gray-800 mb-6">Search Results</h2>
-
-  <% if @errors.any? %>
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-      <ul class="list-disc list-inside">
-        <% @errors.each do |error| %>
-          <li><%= error %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <% if @recipes.any? %>
-    <p class="text-gray-600 mb-6"><%= @recipes.count %> recipe(s) found</p>
-    
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <% @recipes.each do |recipe| %>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-          <div class="p-6">
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="text-xl font-semibold text-gray-800">
-                <%= link_to recipe.name, recipe_path(recipe), class: "hover:text-green-600" %>
-              </h3>
-              <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs capitalize"><%= recipe.diet_type %></span>
-            </div>
-            
-            <% if recipe.description.present? %>
-              <p class="text-gray-600 text-sm mb-4"><%= recipe.description %></p>
-            <% end %>
-
-            <div class="mb-4">
-              <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
-                <span>Match: <span class="font-semibold text-green-600"><%= recipe.match_percentage %>%</span></span>
-                <span><%= recipe.prep_time %> min</span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-green-600 h-2 rounded-full" style="width: <%= recipe.match_percentage %>%"></div>
-              </div>
-            </div>
-
-            <% if recipe.missing_count > 0 %>
-              <p class="text-sm text-orange-600 mb-4">
-                Missing: <%= recipe.ingredients.where("LOWER(name) NOT IN (?)", Ingredient.where("LOWER(name) IN (?)", parse_ingredients_for_view(@ingredients_input)).pluck("LOWER(name)")).pluck(:name).join(", ") %>
-              </p>
-            <% end %>
-
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-400"><%= recipe.ingredients.count %> ingredients</span>
-              <% if logged_in? %>
-                <% if current_user.favorites.exists?(recipe: recipe) %>
-                  <%= button_to "Remove", unfavorite_path(recipe), method: :delete, class: "text-red-600 hover:text-red-800 text-sm" %>
-                <% else %>
-                  <%= button_to "Save", favorite_path(recipe), method: :post, class: "text-green-600 hover:text-green-800 text-sm" %>
-                <% end %>
-              <% else %>
-                <%= link_to "Login to Save", login_path, class: "text-green-600 hover:text-green-800 text-sm" %>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex flex-col lg:flex-row gap-8">
+    <!-- Filters Sidebar -->
+    <aside class="lg:w-64 flex-shrink-0">
+      <div class="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-lg font-semibold text-gray-900">Filters</h3>
+          <%= link_to "Reset All", root_path, class: "text-orange-500 hover:text-orange-600 text-sm font-medium" %>
+        </div>
+        
+        <!-- Active Filters Tags -->
+        <div class="flex flex-wrap gap-2 mb-4">
+          <% if @ingredients_input.present? %>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+              <%= @ingredients_input.split(",").first(3).join(", ") %>
+              <% if @ingredients_input.split(",").count > 3 %>
+                + <%= @ingredients_input.split(",").count - 3 %> more
               <% end %>
+            </span>
+          <% end %>
+          <% if @diet_type.present? %>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+              <%= @diet_type %>
+              <%= button_to "×", root_path, method: :get, class: "ml-1 hover:text-orange-900" %>
+            </span>
+          <% end %>
+        </div>
+        
+        <!-- Filter Options -->
+        <%= form_with url: search_path, method: :post, local: true, class: "space-y-4" do |form| %>
+          <%= hidden_field_tag :ingredients, @ingredients_input %>
+          
+          <div>
+            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Ingredients</h4>
+            <div class="space-y-2">
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :match_type, "available", true, class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Available Only</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :match_type, "missing", false, class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">+ 1-2 Missing</span>
+              </label>
             </div>
           </div>
+          
+          <div>
+            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Dietary Type</h4>
+            <div class="space-y-2">
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :diet_type, "", @diet_type.blank?, class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">All</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :diet_type, "veg", @diet_type == "veg", class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Vegetarian</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :diet_type, "vegan", @diet_type == "vegan", class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Vegan</span>
+              </label>
+            </div>
+          </div>
+          
+          <div>
+            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Difficulty</h4>
+            <div class="flex gap-2">
+              <button type="button" class="px-4 py-2 border border-gray-200 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition">Easy</button>
+              <button type="button" class="px-4 py-2 border border-gray-200 rounded-full text-sm hover:border-orange-500 hover:text-orange-500 transition">Medium</button>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn-primary w-full">Apply Filters</button>
+        <% end %>
+        
+        <div class="mt-6 p-4 bg-orange-50 rounded-lg">
+          <h4 class="text-orange-600 font-semibold text-sm mb-2">Want better matches?</h4>
+          <p class="text-gray-600 text-xs mb-3">Complete your pantry profile to see more accurate recipe suggestions.</p>
+          <%= link_to "Update Pantry →", "#", class: "text-orange-500 hover:text-orange-600 text-xs font-medium" %>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <div class="flex-1">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Top Recipe Matches</h1>
+          <p class="text-gray-600">Showing <%= @recipes.count %> recipes found with your ingredients</p>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <span class="text-gray-600 text-sm">Sort by:</span>
+          <span class="text-orange-500 font-semibold text-sm">Highest Match %</span>
+        </div>
+      </div>
+      
+      <% if @errors.any? %>
+        <div class="bg-red-50 border-l-4 border-red-500 py-4 px-6 rounded-lg mb-6">
+          <ul class="list-disc list-inside text-red-700">
+            <% @errors.each do |error| %>
+              <li><%= error %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+      
+      <% if @recipes.any? %>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <% @recipes.each do |recipe| %>
+            <div class="card">
+              <div class="flex flex-col sm:flex-row">
+                <div class="sm:w-48 h-48 sm:h-auto relative flex-shrink-0">
+                  <%= image_tag "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop", 
+                      alt: recipe.name, 
+                      class: "w-full h-full object-cover" %>
+                  <div class="absolute top-3 left-3">
+                    <span class="badge <%= recipe.diet_type == 'vegan' ? 'badge-vegan' : recipe.diet_type == 'veg' ? 'badge-veg' : 'badge-non-veg' %>">
+                      <%= recipe.diet_type.upcase %>
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="flex-1 p-5">
+                  <div class="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 class="text-xl font-bold text-gray-900 mb-1">
+                        <%= link_to recipe.name, recipe_path(recipe), class: "hover:text-orange-500 transition" %>
+                      </h3>
+                      <p class="text-orange-500 font-bold text-lg"><%= recipe.match_percentage %>% Match</p>
+                    </div>
+                    <% if logged_in? %>
+                      <%= button_to favorite_path(recipe), method: :post, class: "text-gray-300 hover:text-orange-500 transition" do %>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                      <% end %>
+                    <% end %>
+                  </div>
+                  
+                  <div class="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+                    <div class="flex items-center space-x-1">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <span><%= recipe.prep_time %>m</span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                      </svg>
+                      <span>Easy</span>
+                    </div>
+                  </div>
+                  
+                  <% if recipe.missing_count > 0 %>
+                    <div class="mb-4">
+                      <p class="text-xs text-gray-500 uppercase font-semibold mb-2">Missing (<%= recipe.missing_count %>)</p>
+                      <div class="flex flex-wrap gap-2">
+                        <% (recipe.ingredients - Ingredient.where("LOWER(name) IN (?)", parse_ingredients(@ingredients_input))).first(3).each do |ingredient| %>
+                          <span class="px-2 py-1 bg-red-50 text-red-600 rounded-md text-xs"><%= ingredient.name %></span>
+                        <% end %>
+                        <% if recipe.missing_count > 3 %>
+                          <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-xs">+ <%= recipe.missing_count - 3 %> more</span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% else %>
+                    <div class="mb-4">
+                      <p class="text-xs text-green-600 font-semibold flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        All items in pantry
+                      </p>
+                    </div>
+                  <% end %>
+                  
+                  <%= link_to "View Recipe →", recipe_path(recipe), class: "text-orange-500 hover:text-orange-600 font-medium text-sm transition" %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="mt-8 flex justify-center">
+          <nav class="flex items-center space-x-2">
+            <button class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:border-orange-500 hover:text-orange-500 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+            <button class="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-semibold">1</button>
+            <button class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:border-orange-500 hover:text-orange-500 transition">2</button>
+            <button class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:border-orange-500 hover:text-orange-500 transition">3</button>
+            <span class="px-2">...</span>
+            <button class="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center hover:border-orange-500 hover:text-orange-500 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
+          </nav>
+        </div>
+      <% elsif @errors.empty? %>
+        <div class="bg-white rounded-xl shadow-sm p-12 text-center">
+          <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">No matching recipes found</h3>
+          <p class="text-gray-600 mb-6">Try adjusting your search or filters to find what you're looking for.</p>
+          <%= link_to "Try Another Search", root_path, class: "btn-primary" %>
+        </div>
+      <% end %>
+      
+      <!-- Login CTA for non-logged-in users -->
+      <% if !logged_in? %>
+        <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-4 rounded-full shadow-lg flex items-center space-x-4 z-50">
+          <svg class="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-sm font-medium">Log in to save recipes to your favorites</span>
+          <%= link_to "Dismiss", "#", class: "text-white hover:text-gray-300 text-sm font-medium" %>
+          <%= link_to "Sign In", login_path, class: "btn-primary text-sm py-2" %>
         </div>
       <% end %>
     </div>
-  <% elsif @errors.empty? %>
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
-      <p class="text-gray-600 mb-4">No recipes found matching your criteria.</p>
-      <%= link_to "Try Another Search", root_path, class: "inline-block bg-green-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-green-700" %>
-    </div>
-  <% end %>
+  </div>
 </div>
-
-<%# Helper method for view %>
-<% def parse_ingredients_for_view(input)
-  input.downcase.split(",").map { |i| i.strip }.reject { |i| i.blank? }.uniq
-end %>

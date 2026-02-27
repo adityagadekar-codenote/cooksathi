@@ -1,42 +1,101 @@
-<div class="max-w-2xl mx-auto">
-  <div class="text-center mb-8">
-    <h2 class="text-4xl font-bold text-gray-800 mb-2">Cooksathi</h2>
-    <p class="text-gray-600">Your kitchen companion</p>
+<!-- Hero Section -->
+<div class="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute inset-0 bg-black opacity-50"></div>
   </div>
-
-  <div class="bg-white rounded-lg shadow-md p-6">
-    <%= form_with url: search_path, method: :post, local: true, class: "space-y-6" do |form| %>
-      
-      <div>
-        <%= label_tag :ingredients, "What ingredients do you have?", class: "block text-sm font-medium text-gray-700 mb-2" %>
-        <%= text_field_tag :ingredients, "", 
-            placeholder: "e.g., tomato, onion, garlic, rice", 
-            class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent",
-            required: true %>
-        <p class="mt-1 text-sm text-gray-500">Separate ingredients with commas</p>
+  
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+    <div class="text-center mb-12">
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+        Your kitchen companion.
+      </h1>
+      <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+        Find the perfect recipe based on what's in your fridge.
+      </p>
+    </div>
+    
+    <!-- Search Box -->
+    <div class="max-w-4xl mx-auto">
+      <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 md:p-8">
+        <%= form_with url: search_path, method: :post, local: true, class: "space-y-6" do |form| %>
+          <div class="relative">
+            <div class="flex">
+              <div class="relative flex-1">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                </div>
+                <%= text_field_tag :ingredients, "",
+                    placeholder: "Tomato, Onion, Garlic...",
+                    class: "w-full pl-12 pr-4 py-4 rounded-l-lg border-0 focus:ring-2 focus:ring-orange-500 text-gray-900 placeholder-gray-500",
+                    required: true %>
+              </div>
+              <%= submit_tag "Search", class: "btn-primary rounded-l-none py-4 px-8 cursor-pointer" %>
+            </div>
+          </div>
+          
+          <div class="flex flex-wrap gap-3 items-center">
+            <div class="relative">
+              <%= select_tag :diet_type,
+                  options_for_select([["Any Diet", ""], ["Veg", "veg"], ["Vegan", "vegan"], ["Non-Veg", "non-veg"]]),
+                  class: "px-4 py-2 bg-white/20 backdrop-blur text-white border border-white/30 rounded-full focus:ring-2 focus:ring-orange-500 cursor-pointer" %>
+            </div>
+            
+            <div class="flex-1 min-w-[200px]">
+              <label class="text-white text-sm mb-2 block">Max Prep Time</label>
+              <div class="flex items-center space-x-3">
+                <%= range_field_tag :max_time, 45, 
+                    min: 5, max: 120, step: 5,
+                    class: "flex-1 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-orange-500" %>
+                <span class="text-white text-sm font-medium bg-white/20 px-3 py-1 rounded-full" id="timeValue">45 mins</span>
+              </div>
+            </div>
+          </div>
+        <% end %>
       </div>
+    </div>
+  </div>
+</div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <%= label_tag :diet_type, "Diet Type", class: "block text-sm font-medium text-gray-700 mb-2" %>
-          <%= select_tag :diet_type, 
-              options_for_select([["Veg", "veg"], ["Vegan", "vegan"]]), 
-              class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" %>
-        </div>
-
-        <div>
-          <%= label_tag :max_time, "Maximum Time (minutes)", class: "block text-sm font-medium text-gray-700 mb-2" %>
-          <%= number_field_tag :max_time, "", 
-              placeholder: "e.g., 30", 
-              min: 1,
-              class: "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" %>
-        </div>
-      </div>
-
-      <div>
-        <%= form.submit "Find Recipes", class: "w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition duration-200 cursor-pointer" %>
-      </div>
-
+<!-- Trending Recipes Section -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+  <div class="flex justify-between items-center mb-8">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Trending Recipes</h2>
+    <%= link_to "View all →", recipes_path, class: "text-orange-500 hover:text-orange-600 font-medium transition" %>
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% @trending_recipes&.first(6)&.each do |recipe| %>
+      <%= render partial: "recipes/recipe_card", locals: { recipe: recipe } %>
     <% end %>
   </div>
 </div>
+
+<!-- Newsletter Section -->
+<div class="bg-orange-50 py-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Never run out of ideas</h2>
+    <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+      Get weekly personalized meal plans and ingredient alerts delivered to your inbox.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+      <input type="email" placeholder="Your email address" class="flex-1 px-6 py-3 rounded-full border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+      <button class="btn-primary rounded-full px-8 py-3">Subscribe</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Update time slider value
+  const timeSlider = document.querySelector('input[name="max_time"]');
+  const timeValue = document.getElementById('timeValue');
+  
+  if (timeSlider && timeValue) {
+    timeValue.textContent = timeSlider.value + ' mins';
+    
+    timeSlider.addEventListener('input', function() {
+      timeValue.textContent = this.value + ' mins';
+    });
+  }
+</script>

@@ -1,50 +1,127 @@
-<div class="max-w-6xl mx-auto">
-  <h2 class="text-3xl font-bold text-gray-800 mb-6">Browse All Recipes</h2>
-
-  <% if @recipes.any? %>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <% @recipes.each do |recipe| %>
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-          <div class="p-6">
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="text-xl font-semibold text-gray-800">
-                <%= link_to recipe.name, recipe_path(recipe), class: "hover:text-green-600" %>
-              </h3>
-              <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs capitalize"><%= recipe.diet_type %></span>
-            </div>
-            
-            <% if recipe.description.present? %>
-              <p class="text-gray-600 text-sm mb-4"><%= recipe.description %></p>
-            <% end %>
-
-            <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-              <span><%= recipe.prep_time %> min</span>
-              <span><%= recipe.ingredients.count %> ingredients</span>
-              <span class="capitalize"><%= recipe.visibility %></span>
-            </div>
-
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">By <%= recipe.user&.name || "Cooksathi" %></span>
-              <% if logged_in? %>
-                <% if current_user.favorites.exists?(recipe: recipe) %>
-                  <%= button_to "Remove", unfavorite_path(recipe), method: :delete, class: "text-red-600 hover:text-red-800 text-sm" %>
-                <% else %>
-                  <%= button_to "Save", favorite_path(recipe), method: :post, class: "text-green-600 hover:text-green-800 text-sm" %>
-                <% end %>
-              <% else %>
-                <%= link_to "Login to Save", login_path, class: "text-green-600 hover:text-green-800 text-sm" %>
-              <% end %>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="flex flex-col lg:flex-row gap-8">
+    <!-- Filters Sidebar -->
+    <aside class="lg:w-64 flex-shrink-0">
+      <div class="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-lg font-semibold text-gray-900">Filters</h3>
+          <%= link_to "Reset All", recipes_path, class: "text-orange-500 hover:text-orange-600 text-sm font-medium" %>
+        </div>
+        
+        <%= form_with url: recipes_path, method: :get, local: true, class: "space-y-6" do |form| %>
+          <!-- Diet Type Filter -->
+          <div>
+            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Dietary Type</h4>
+            <div class="space-y-2">
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :diet_type, "", params[:diet_type].blank?, class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">All</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :diet_type, "veg", params[:diet_type] == "veg", class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Vegetarian</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :diet_type, "vegan", params[:diet_type] == "vegan", class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Vegan</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :diet_type, "non-veg", params[:diet_type] == "non-veg", class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Non-Vegetarian</span>
+              </label>
             </div>
           </div>
+          
+          <!-- Prep Time Filter -->
+          <div>
+            <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Max Prep Time</h4>
+            <div class="space-y-2">
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :max_time, "", params[:max_time].blank?, class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Any</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :max_time, "15", params[:max_time] == "15", class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Under 15 min</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :max_time, "30", params[:max_time] == "30", class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Under 30 min</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :max_time, "45", params[:max_time] == "45", class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Under 45 min</span>
+              </label>
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <%= radio_button_tag :max_time, "60", params[:max_time] == "60", class: "text-orange-500 focus:ring-orange-500" %>
+                <span class="text-gray-700 text-sm">Under 60 min</span>
+              </label>
+            </div>
+          </div>
+          
+          <!-- Visibility Filter (for logged in users) -->
+          <% if logged_in? %>
+            <div>
+              <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Visibility</h4>
+              <div class="space-y-2">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                  <%= check_box_tag :visibility, "public", params[:visibility] != "private", class: "text-orange-500 focus:ring-orange-500 rounded" %>
+                  <span class="text-gray-700 text-sm">Public</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer">
+                  <%= check_box_tag :visibility, "private", params[:visibility] == "private", class: "text-orange-500 focus:ring-orange-500 rounded" %>
+                  <span class="text-gray-700 text-sm">My Private</span>
+                </label>
+              </div>
+            </div>
+          <% end %>
+          
+          <button type="submit" class="btn-primary w-full">Apply Filters</button>
+        <% end %>
+        
+        <!-- Tip Box -->
+        <div class="mt-6 p-4 bg-orange-50 rounded-lg">
+          <h4 class="text-orange-600 font-semibold text-sm mb-2">Want better matches?</h4>
+          <p class="text-gray-600 text-xs mb-3">Complete your pantry profile to see more accurate recipe suggestions.</p>
+          <%= link_to "Update Pantry →", root_path, class: "text-orange-500 hover:text-orange-600 text-xs font-medium" %>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <div class="flex-1">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Browse Recipes</h1>
+          <p class="text-gray-600"><%= @recipes.count %> recipes found</p>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+          <select class="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 bg-white">
+            <option>Most Popular</option>
+            <option>Newest First</option>
+            <option>Prep Time: Low to High</option>
+            <option>Prep Time: High to Low</option>
+          </select>
+        </div>
+      </div>
+      
+      <% if @recipes.any? %>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <% @recipes.each do |recipe| %>
+            <%= render partial: "recipes/recipe_card", locals: { recipe: recipe } %>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="bg-white rounded-xl shadow-sm p-12 text-center">
+          <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">No recipes found</h3>
+          <p class="text-gray-600 mb-6">Try adjusting your filters or search criteria.</p>
+          <%= link_to "Clear Filters", recipes_path, class: "btn-primary" %>
         </div>
       <% end %>
     </div>
-  <% else %>
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
-      <p class="text-gray-600 mb-4">No recipes available yet.</p>
-      <% if logged_in? %>
-        <%= link_to "Create First Recipe", new_recipe_path, class: "inline-block bg-green-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-green-700" %>
-      <% end %>
-    </div>
-  <% end %>
+  </div>
 </div>

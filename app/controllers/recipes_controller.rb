@@ -23,11 +23,13 @@ class RecipesController < ApplicationController
       # Base query with eager loading - only visible recipes
       recipes_query = Recipe.includes(:ingredients).visible_to(current_user)
 
-      # Filter by diet type if provided
-      recipes_query = recipes_query.where(diet_type: @diet_type) if @diet_type.present?
+      # Filter by diet type if provided and not empty
+      if @diet_type.present? && @diet_type != ''
+        recipes_query = recipes_query.where(diet_type: @diet_type)
+      end
 
       # Filter by max time if provided
-      recipes_query = recipes_query.where("prep_time <= ?", @max_time) if @max_time
+      recipes_query = recipes_query.where("prep_time <= ?", @max_time) if @max_time && @max_time > 0
 
       # Get all candidate recipes
       candidate_recipes = recipes_query.to_a
@@ -40,7 +42,7 @@ class RecipesController < ApplicationController
         recipe.match_percentage = (recipe.matched_count.to_f / recipe.total_count * 100).round
         recipe.missing_count = recipe.total_count - recipe.matched_count
 
-        recipe.match_percentage >= 40
+        recipe.match_percentage >= 20
       end
 
       # Sort by match_percentage DESC, missing_count ASC, prep_time ASC
@@ -67,7 +69,22 @@ class RecipesController < ApplicationController
   end
 
   def index
-    @recipes = Recipe.includes(:ingredients, :user).public_only.order(created_at: :desc)
+    @recipes = Recipe.includes(:ingredients).public_only
+    
+    # Apply filters
+    if params[:diet_type].present?
+      @recipes = @recipes.where(diet_type: params[:diet_type])
+    end
+    
+    if params[:max_time].present?
+      @recipes = @recipes.where("prep_time <= ?", params[:max_time].to_i)
+    end
+    
+    if params[:visibility] == "private" && logged_in?
+      @recipes = Recipe.includes(:ingredients).where(user_id: current_user.id, visibility: "private")
+    end
+    
+    @recipes = @recipes.order(created_at: :desc)
   end
 
   def new
